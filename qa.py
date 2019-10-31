@@ -41,7 +41,7 @@ class QAContext(object):
                 print("Thank you!")
                 break
             answer = self.predict(question)
-            print(f"下联：{answer}")
+            print("下联：{}".format(answer))
 
 
 def create_qa_context(model_path: str, word_to_ix_path: str, 
@@ -58,8 +58,8 @@ def create_qa_context(model_path: str, word_to_ix_path: str,
 if __name__ == "__main__":
     device = torch.device('cpu')
     output_dir = config.ouput_dir
-    vocab_path = f'./{config.data_dir}/vocabs'
+    vocab_path = './{}/vocabs'.format(config.data_dir)
     model_path = max(os.listdir(output_dir))
-    print(f'Model filename: {model_path}')
-    ctx = create_qa_context(f'./{output_dir}/{model_path}', vocab_path, config.embed_dim, config.hidden_dim, device)
+    print('Model filename: {}'.format(model_path))
+    ctx = create_qa_context('./{}/{}'.format(output_dir, model_path), vocab_path, config.embed_dim, config.hidden_dim, device)
     ctx.run_console_qa(end_flag='q')

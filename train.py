@@ -10,7 +10,6 @@ import os
 import logging
 import argparse
 
-
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -28,9 +27,10 @@ def init_dataset(seq_path, tag_path, word_to_ix, max_seq_len, batch_size):
 def save_model(model, output_dir, epoch):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    filename = os.path.join(output_dir, f"cnn_lstm_att_{epoch:02}.pkl")
-    logger.info(f'***** Save model `{filename}` *****')
+    filename = os.path.join(output_dir, "cnn_lstm_att_{:02}.pkl".format(epoch))
+    logger.info('***** Save model `{}` *****'.format(filename))
     torch.save(model.state_dict(), filename)
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -38,37 +38,37 @@ def get_args():
     parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--lr", default=0.001, type=float)
     parser.add_argument("--max_len", default=32, type=int)
-    parser.add_argument("--no_cuda", action='store_true')
+    parser.add_argument("--no_cuda", default=False, action='store_true')
     return parser.parse_args()
 
 
 def main():
-    seq_path = f'{config.data_dir}/train/in.txt'
-    tag_path = f'{config.data_dir}/train/out.txt'
-    vocab_path = f'{config.data_dir}/vocabs'
+    seq_path = '{}/train/in.txt'.format(config.data_dir)
+    tag_path = '{}/train/out.txt'.format(config.data_dir)
+    vocab_path = '{}/vocabs'.format(config.data_dir)
 
     args = get_args()
     epochs = args.epochs
     batch_size = args.batch_size
     lr = args.lr
     max_seq_len = args.max_len
-    
+
     embed_dim = config.embed_dim
     hidden_dim = config.hidden_dim
     output_dir = config.ouput_dir
 
     device = torch.device("cuda" if torch.cuda.is_available()
-                          and not args.no_cuda else "cpu")
+                                    and not args.no_cuda else "cpu")
 
-    logger.info(f"***** Loading vocab *****")
+    logger.info("***** Loading vocab *****")
     word_to_ix = load_vocab(vocab_path)
     vocab_size = len(word_to_ix)
 
-    logger.info(f"***** Initializing dataset *****")
+    logger.info("***** Initializing dataset *****")
     train_dataloader = init_dataset(
         seq_path, tag_path, word_to_ix, max_seq_len, batch_size)
 
-    logger.info(f"***** Training *****")
+    logger.info("***** Training *****")
     model = CNNBiLSTMAtt(vocab_size, embed_dim, hidden_dim)
     model.to(device)
     model.train()
@@ -76,7 +76,7 @@ def main():
     loss_func = nn.CrossEntropyLoss(ignore_index=word_to_ix['[PAD]'])
 
     for epoch in range(epochs):
-        logger.info(f"***** Epoch {epoch} *****")
+        logger.info("***** Epoch {} *****".format(epoch))
         for step, batch in enumerate(train_dataloader):
             optimizer.zero_grad()
             batch = tuple(t.to(device) for t in batch)
@@ -87,7 +87,7 @@ def main():
             optimizer.step()
             if step % 100 == 0:
                 logger.info(
-                    f"[epoch]: {epoch}, [batch]: {step}, [loss]: {loss.item()}")
+                    "[epoch]: {},  [step]:{}, [loss]:{}".format( epoch,  step, loss))
         save_model(model, output_dir, epoch + 1)
 
 

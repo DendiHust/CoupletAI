@@ -1,6 +1,6 @@
 import torch
 from typing import Dict, Tuple, List, Mapping
-
+from tqdm import tqdm
 
 def create_dataset(seqs: List[List[str]],
                    tags: List[List[str]],
@@ -18,7 +18,8 @@ def create_dataset(seqs: List[List[str]],
     seqs_tensor = torch.ones(num_seqs, max_seq_len) * pad_ix
     seqs_mask = torch.zeros(num_seqs, max_seq_len)
     tags_tesnor = torch.ones(num_seqs, max_seq_len) * pad_ix
-    for i in range(num_seqs):
+    for i in tqdm(range(num_seqs)):
+        # 句子有字的地方值为 1
         seqs_mask[i, : len(seqs[i])] = 1
         for j, word in enumerate(seqs[i]):
             seqs_tensor[i, j] = word_to_ix.get(word, word_to_ix['[UNK]'])
