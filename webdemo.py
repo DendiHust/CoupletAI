@@ -3,14 +3,16 @@ import torch
 import os
 from flask import Flask, request, render_template
 import config
+import pandas as pd
+
 app = Flask(__name__)
 
 
 device = torch.device('cpu')
 output_dir = config.ouput_dir
-vocab_path = f'./{config.data_dir}/vocabs'
+vocab_path = './{}/vocabs'.format(config.data_dir)
 model_path = max(os.listdir(output_dir))
-ctx = create_qa_context(f'./{output_dir}/{model_path}', vocab_path, config.embed_dim, config.hidden_dim, device)
+ctx = create_qa_context('./{}/{}'.format(output_dir,model_path), vocab_path, config.embed_dim, config.hidden_dim, device)
 
 @app.route('/<coupletup>')
 def api(coupletup):
@@ -25,4 +27,7 @@ def index():
     return render_template("index.html", coupletdown=coupletdown)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    # app.run(host='0.0.0.0')
+    df = pd.read_excel('./couplet/result-test.xlsx')
+    df['AI下联'] = df['上联'].apply(api)
+    df.to_excel('./couplet/result-test.xlsx', index=False)
