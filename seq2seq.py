@@ -14,13 +14,13 @@ import random
 class EncoderLayer(nn.Module):
 
     def __init__(self,
-                 vocab,
+                 vocab_size,
                  embedd_dim,
                  enc_hidden_dim,
                  dec_hidden_dim,
                  dropout):
         super(EncoderLayer, self).__init__()
-        self.embedding = nn.Embedding(vocab, embedd_dim)
+        self.embedding = nn.Embedding(vocab_size, embedd_dim)
         self.rnn = nn.GRU(embedd_dim, enc_hidden_dim, bidirectional=True)
         self.fc = nn.Linear(enc_hidden_dim * 2, dec_hidden_dim)
         self.dropout = nn.Dropout(dropout)
@@ -48,12 +48,12 @@ class EncoderLayer(nn.Module):
         return outputs, hidden
 
 
-class Attention(nn.Module):
+class AttentionLayer(nn.Module):
 
     def __init__(self,
                  enc_hidden_dim,
                  dec_hidden_dim):
-        super(Attention, self).__init__()
+        super(AttentionLayer, self).__init__()
 
         self.attn = nn.Linear((enc_hidden_dim * 2) + dec_hidden_dim, dec_hidden_dim)
         self.v = nn.Parameter(torch.rand(dec_hidden_dim))
