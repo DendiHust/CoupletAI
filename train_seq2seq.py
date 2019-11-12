@@ -21,7 +21,8 @@ def get_args():
     args.add_argument("--epoches", default=20, type=int)
     args.add_argument("--lr", default=0.001, type=float)
     args.add_argument("--max_len", default=32, type=int)
-    args.add_argument("--vocab_size", default=len(dataset_pro.SHANG_LIAN.vocab.stoi), type=int)
+    args.add_argument("--sl_vocab_size", default=len(dataset_pro.SHANG_LIAN.vocab.stoi), type=int)
+    args.add_argument("--xl_vocab_size", default=len(dataset_pro.XIA_LIAN.vocab.stoi), type=int)
     args.add_argument("--embedding_dim", default=150, type=int)
     args.add_argument("--enc_hidden_dim", default=256, type=int)
     args.add_argument("--dec_hidden_dim", default=256, type=int)
@@ -32,12 +33,12 @@ def get_args():
     return args.parse_args()
 
 
-def train(model: Seq2Seq, optimizer, criterion, clip, teacher_radio):
+def train(model: Seq2Seq, optimizer, criterion, clip, teacher_radio, device):
     model.train()
     epoches_loss = 0
     for index, batch in enumerate(dataset_pro.train_iter):
-        shang_lian = batch.shang_lian
-        xia_lian = batch.xia_lian
+        shang_lian = batch.shang_lian.to(device)
+        xia_lian = batch.xia_lian.to(device)
 
         optimizer.zero_grad()
 
@@ -56,13 +57,13 @@ def train(model: Seq2Seq, optimizer, criterion, clip, teacher_radio):
     return result_loss
 
 
-def evaluate(model:Seq2Seq, criterion):
+def evaluate(model: Seq2Seq, criterion, device):
     model.eval()
     epoches_loss = 0
     with torch.no_grad():
         for index, batch in enumerate(dataset_pro.valid_iter):
-            shang_lian = batch.shang_lian
-            xia_lian = batch.xia_lian
+            shang_lian = batch.shang_lian.to(device)
+            xia_lian = batch.xia_lian.to(device)
 
             output = model(shang_lian, xia_lian, 0)
 
@@ -81,16 +82,15 @@ def epoch_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 
-
-
 if __name__ == '__main__':
     args = get_args()
-    encoder_layer = EncoderLayer(args.vocab_size, args.embedding_dim, args.enc_hidden_dim, args.dec_hidden_dim,
-                                 args.dropout)
-    atten_layer = AttentionLayer(args.enc_hidden_dim, args.dec_hidden_dim)
-    decoder_layer = DecoderLayer(args.vocab_size, args.embedding_dim, args.enc_hidden_dim, args.dec_hidden_dim,
-                                 args.dropout, atten_layer)
-    seq2seq_model = Seq2Seq(encoder_layer, decoder_layer, atten_layer)
+    device = torch.device('cuda' if args.no_cuda == False else 'cpu')
+    encoder_layer = EncoderLayer(args.sl_vocab_size, args.embedding_dim, args.enc_hidden_dim, args.dec_hidden_dim,
+                                 args.dropout).to(device)
+    atten_layer = AttentionLayer(args.enc_hidden_dim, args.dec_hidden_dim).to(device)
+    decoder_layer = DecoderLayer(args.xl_vocab_size, args.embedding_dim, args.enc_hidden_dim, args.dec_hidden_dim,
+                                 args.dropout, atten_layer).to(device)
+    seq2seq_model = Seq2Seq(encoder_layer, decoder_layer, device).to(device)
 
     # 优化器
     optimizer = optim.Adam(seq2seq_model.parameters())
@@ -99,17 +99,17 @@ if __name__ == '__main__':
     # 损失函数
     criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 
-    N_EPOCHS = 10
-    CLIP = 1
+    # N_EPOCHS = 10
+    # CLIP = 1
 
     best_valid_loss = float('inf')
 
-    for epoch in range(N_EPOCHS):
+    for epoch in range(args.epoches):
 
         start_time = time.time()
 
-        train_loss = train(seq2seq_model,  optimizer, criterion,args.teacher_forcing_ratio, args.gradient_clip)
-        valid_loss = evaluate(seq2seq_model,  criterion)
+        train_loss = train(seq2seq_model, optimizer, criterion, args.teacher_forcing_ratio, args.gradient_clip, device)
+        valid_loss = evaluate(seq2seq_model, criterion, device)
 
         end_time = time.time()
 
@@ -122,6 +122,3 @@ if __name__ == '__main__':
         print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
-
-
-
