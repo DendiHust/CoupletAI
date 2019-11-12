@@ -44,10 +44,10 @@ def get_dataset():
 
     return Dataset(examples, fields)
 
+data = get_dataset()
+train_data, valid_data = data.split(0.9)
 
-train_data, valid_data = get_dataset().split(0.9)
-
-SHANG_LIAN.build_vocab(train_data, min_freq=5)
+SHANG_LIAN.build_vocab(data, min_freq=5)
 
 with open(stoi_dir, mode='w', encoding='utf8') as f:
     json.dump(SHANG_LIAN.vocab.stoi, f)
