@@ -14,7 +14,8 @@ import json
 
 shanglian_dir = './couplet/train/in-bak.txt'
 xialian_dir = './couplet/train/out-bak.txt'
-stoi_dir = './stoi/char_2_id.txt'
+sl_stoi_dir = './stoi/sl_char_2_id.txt'
+xl_stoi_dir = './stoi/xl_char_2_id.txt'
 max_length = 32
 batch_size = 32
 
@@ -48,9 +49,13 @@ data = get_dataset()
 train_data, valid_data = data.split(0.9)
 
 SHANG_LIAN.build_vocab(data, min_freq=5)
+XIA_LIAN.build_vocab(data, min_freq=5)
 
-with open(stoi_dir, mode='w', encoding='utf8') as f:
+with open(sl_stoi_dir, mode='w', encoding='utf8') as f:
     json.dump(SHANG_LIAN.vocab.stoi, f)
+
+with open(xl_stoi_dir, mode='w', encoding='utf8') as f:
+    json.dump(XIA_LIAN.vocab.stoi, f)
 
 train_iter, valid_iter = BucketIterator.splits(
     (train_data, valid_data),
@@ -61,7 +66,8 @@ train_iter, valid_iter = BucketIterator.splits(
 
 if __name__ == '__main__':
     print(len(get_content_list(shanglian_dir)))
-    print(SHANG_LIAN.vocab.stoi['<sos>'])
-    print(SHANG_LIAN.vocab.stoi['<eos>'])
+    # print(SHANG_LIAN.vocab.stoi['<sos>'])
+    # print(SHANG_LIAN.vocab.stoi['<eos>'])
     print(SHANG_LIAN.vocab.stoi['<pad>'])
-    print(SHANG_LIAN.vocab.stoi['<unk>'])
+    print(XIA_LIAN.vocab.stoi['<pad>'])
+    # print(SHANG_LIAN.vocab.stoi['<unk>'])

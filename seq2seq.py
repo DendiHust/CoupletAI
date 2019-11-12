@@ -166,7 +166,7 @@ class Seq2Seq(nn.Module):
 
         trg_vocab_size = self.decoder.vocab_size
 
-        outputs = torch.zeros(max_length, batch_size, trg_vocab_size).to(self.device)
+        outputs = torch.zeros(max_length, batch_size, trg_vocab_size)#.to(self.device)
 
         encoder_outputs, hidden = self.encoder(src_input)
         # first input to decoder is <sos>
