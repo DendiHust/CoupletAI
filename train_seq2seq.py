@@ -14,6 +14,7 @@ import torch.optim as optim
 import torch.nn as nn
 import time
 import math
+from tqdm import tqdm
 
 
 def get_args():
@@ -36,19 +37,21 @@ def get_args():
 def train(model: Seq2Seq, optimizer, criterion, clip, teacher_radio, device):
     model.train()
     epoches_loss = 0
-    for index, batch in enumerate(dataset_pro.train_iter):
-        shang_lian = batch.shang_lian.to(device)
+    for index, batch in tqdm(enumerate(dataset_pro.train_iter)):
+        shang_lian, shang_lian_length = batch.shang_lian
+        shang_lian = shang_lian.to(device)
+        shang_lian_length = shang_lian_length.to(device)
         xia_lian = batch.xia_lian.to(device)
 
         optimizer.zero_grad()
 
-        outputs = model(shang_lian, xia_lian, teacher_radio)
+        outputs, _ = model(shang_lian, shang_lian_length, xia_lian, teacher_radio)
         outputs = outputs[1:].view(-1, outputs.shape[-1])
         xia_lian = xia_lian[1:].view(-1)
         loss = criterion(outputs, xia_lian)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-        print(loss.item())
+        # print(loss.item())
         optimizer.step()
 
         epoches_loss += loss.item()
@@ -62,10 +65,12 @@ def evaluate(model: Seq2Seq, criterion, device):
     epoches_loss = 0
     with torch.no_grad():
         for index, batch in enumerate(dataset_pro.valid_iter):
-            shang_lian = batch.shang_lian.to(device)
+            shang_lian, shang_lian_length = batch.shang_lian
+            shang_lian = shang_lian.to(device)
+            shang_lian_length = shang_lian_length.to(device)
             xia_lian = batch.xia_lian.to(device)
 
-            output = model(shang_lian, xia_lian, 0)
+            output, _ = model(shang_lian,shang_lian_length, xia_lian, 0)
             output = output[1:].view(-1, output.shape[-1])
             xia_lian = xia_lian[1:].view(-1)
 
@@ -83,18 +88,22 @@ def epoch_time(start_time, end_time):
 
 if __name__ == '__main__':
     args = get_args()
+    # pad index
+    PAD_IDX = dataset_pro.SHANG_LIAN.vocab.stoi['<pad>']
+    SOS_IDX = dataset_pro.XIA_LIAN.vocab.stoi['<sos>']
+    EOS_IDX = dataset_pro.XIA_LIAN.vocab.stoi['<eos>']
+
     device = torch.device('cuda' if args.no_cuda == False else 'cpu')
     encoder_layer = EncoderLayer(args.sl_vocab_size, args.embedding_dim, args.enc_hidden_dim, args.dec_hidden_dim,
                                  args.dropout).to(device)
     atten_layer = AttentionLayer(args.enc_hidden_dim, args.dec_hidden_dim).to(device)
     decoder_layer = DecoderLayer(args.xl_vocab_size, args.embedding_dim, args.enc_hidden_dim, args.dec_hidden_dim,
                                  args.dropout, atten_layer).to(device)
-    seq2seq_model = Seq2Seq(encoder_layer, decoder_layer, device).to(device)
+    seq2seq_model = Seq2Seq(encoder_layer, decoder_layer, PAD_IDX, SOS_IDX, EOS_IDX, device).to(device)
 
     # 优化器
     optimizer = optim.Adam(seq2seq_model.parameters())
-    # pad index
-    PAD_IDX = dataset_pro.XIA_LIAN.vocab.stoi['<pad>']
+
     # 损失函数
     criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 

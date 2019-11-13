@@ -3,7 +3,7 @@
 # @Time    : 2019/11/12 17:09
 # @Author  : 云帆
 # @Site    : 
-# @File    : dataset_pro.py
+# @File    : dataset.py
 # @Software: PyCharm
 
 import torchtext
@@ -33,8 +33,8 @@ def tokenize_func(text):
     return text.split(' ')
 
 
-SHANG_LIAN = Field(tokenize=tokenize_func, init_token='<sos>', eos_token='<eos>', fix_length=max_length)
-XIA_LIAN = Field(tokenize=tokenize_func, init_token='<sos>', eos_token='<eos>', fix_length=max_length)
+SHANG_LIAN = Field(tokenize=tokenize_func, init_token='<sos>', eos_token='<eos>',  include_lengths=True)
+XIA_LIAN = Field(tokenize=tokenize_func, init_token='<sos>', eos_token='<eos>')
 
 
 def get_dataset():
@@ -48,6 +48,7 @@ def get_dataset():
 
     return Dataset(examples, fields)
 
+
 data = get_dataset()
 train_data, valid_data = data.split(0.9)
 
@@ -60,6 +61,7 @@ with open(sl_stoi_dir, mode='w', encoding='utf8') as f:
 with open(xl_stoi_dir, mode='w', encoding='utf8') as f:
     json.dump(XIA_LIAN.vocab.stoi, f)
 
+# 迭代器
 train_iter, valid_iter = BucketIterator.splits(
     (train_data, valid_data),
     batch_size=batch_size,
@@ -67,9 +69,18 @@ train_iter, valid_iter = BucketIterator.splits(
     sort_key=lambda x: len(x.shang_lian)
 )
 
+
+
+
+
+
 if __name__ == '__main__':
-    print(len(get_content_list(shanglian_dir)))
-    # print(SHANG_LIAN.vocab.stoi['<sos>'])
+    # for batch in train_iter:
+    #     print(batch.shang_lian)
+
+
+    # print(len(get_content_list(shanglian_dir)))
+    print(SHANG_LIAN.vocab.stoi['<sos>'])
     # print(SHANG_LIAN.vocab.stoi['<eos>'])
     print(SHANG_LIAN.vocab.stoi['<pad>'])
     print(XIA_LIAN.vocab.stoi['<pad>'])
