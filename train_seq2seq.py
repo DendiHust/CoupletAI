@@ -29,7 +29,7 @@ def get_args():
     args.add_argument("--dropout", default=0.1, type=float)
     args.add_argument("--teacher_forcing_ratio", default=0.3, type=float)
     args.add_argument("--gradient_clip", default=5.0, type=float)
-    args.add_argument("--no_cuda", default=False, action='store_true')
+    args.add_argument("--no_cuda", default=True, action='store_true')
     return args.parse_args()
 
 
@@ -48,7 +48,7 @@ def train(model: Seq2Seq, optimizer, criterion, clip, teacher_radio, device):
         loss = criterion(outputs, xia_lian)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-        # print(loss.item())
+        print(loss.item())
         optimizer.step()
 
         epoches_loss += loss.item()
@@ -66,12 +66,11 @@ def evaluate(model: Seq2Seq, criterion, device):
             xia_lian = batch.xia_lian.to(device)
 
             output = model(shang_lian, xia_lian, 0)
-
             output = output[1:].view(-1, output.shape[-1])
-            xia_lian = xia_lian.view(-1)
+            xia_lian = xia_lian[1:].view(-1)
 
             loss = criterion(output, xia_lian)
-            epoches_loss += loss
+            epoches_loss += loss.item()
     return epoches_loss / len(dataset_pro.valid_iter)
 
 
@@ -119,6 +118,6 @@ if __name__ == '__main__':
             best_valid_loss = valid_loss
             torch.save(seq2seq_model.state_dict(), 'tut3-model.pt')
 
-        print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
-        print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
-        print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
+        print('Epoch: {:02} | Time: {}m {}s'.format(epoch + 1, epoch_mins, epoch_secs))
+        print('\tTrain Loss: {:.3f} | Train PPL: {:7.3f}'.format(train_loss, math.exp(train_loss)))
+        print('\t Val. Loss: {:.3f} |  Val. PPL: {:7.3f}'.format(valid_loss, math.exp(valid_loss)))

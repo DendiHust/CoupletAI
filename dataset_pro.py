@@ -22,7 +22,10 @@ batch_size = 32
 
 def get_content_list(file_path):
     with open(file_path, mode='r', encoding='utf8') as f:
-        return list(f.readlines())
+        result = []
+        for item in f.readlines():
+            result.append(str(item).strip())
+        return result
 
 
 def tokenize_func(text):
