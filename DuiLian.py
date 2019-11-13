@@ -81,7 +81,7 @@ if __name__ == '__main__':
                                  args.dropout, atten_layer).to(device)
     seq2seq_model = Seq2Seq(encoder_layer, decoder_layer, PAD_IDX, SOS_IDX, EOS_IDX, device).to(device)
 
-    seq2seq_model.load_state_dict(torch.load('./tut3-model.pt', map_location='cpu'))
+    seq2seq_model.load_state_dict(torch.load('./seq2seq_30_model.pt', map_location='cpu'))
     seq2seq_model.eval()
     # text = '庭有余闲，竹露松风蕉雨'
     df = pd.read_excel('./couplet/result-test.xlsx')
