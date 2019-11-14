@@ -8,6 +8,9 @@
 
 import operator
 from queue import PriorityQueue
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 
 class BeamSearchNode(object):
@@ -32,4 +35,18 @@ class BeamSearchNode(object):
         return self.log_prob / float(self.length - 1 + 1e-6) + alpha * reward
 
 
+def beam_decode(decode_outputs, encoder_outputs=None, beam_with=3):
+    '''
+
+    :param decode_outputs: 解码器
+    :param encoder_outputs:
+    :param beam_with:
+    :return:
+    '''
+    pass
+
+
+
+if __name__ == '__main__':
+    pass
 
