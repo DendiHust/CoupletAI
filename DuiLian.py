@@ -83,8 +83,8 @@ if __name__ == '__main__':
 
     seq2seq_model.load_state_dict(torch.load('./seq2seq_30_model.pt', map_location='cpu'))
     seq2seq_model.eval()
-    text = '清风不识字，何故乱翻书'
-    print(predict_xl(text, seq2seq_model, device))
-    # df = pd.read_excel('./couplet/result-test.xlsx')
-    # df['seq2seq_下联'] = df['上联'].apply(lambda x: predict_xl(x, seq2seq_model, device))
-    # df.to_excel('./couplet/result-test.xlsx',index=False)
+    # text = '心不明点灯何用'
+    # print(predict_xl(text, seq2seq_model, device))
+    df = pd.read_excel('./couplet/result-test.xlsx')
+    df['seq2seq_下联_1113-2'] = df['上联'].apply(lambda x: predict_xl(x, seq2seq_model, device))
+    df.to_excel('./couplet/result-test.xlsx',index=False)
