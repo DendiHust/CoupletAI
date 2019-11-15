@@ -11,6 +11,7 @@ import argparse
 # import dataset_pro
 import torch
 import pandas as pd
+import beam_search
 
 with open('./stoi/sl_char_2_id.txt', mode='r', encoding='utf8') as f:
     sl_stoi = json.load(f)
@@ -55,14 +56,23 @@ def get_output_char(result_id_list):
     return ''.join(result)
 
 
-def predict_xl(text, model, device):
+def predict_xl(text, model, device, is_beam_search = False):
     input_id = get_input_char_index(text)
     input_length = torch.LongTensor([len(input_id)]).to(device)
     input_tensor = torch.LongTensor(input_id).unsqueeze(1).to(device)
-    output_logits, _ = model(input_tensor, input_length, None, 0)
-    outpu_tensor = torch.argmax(output_logits.squeeze(1), 1)
-    ouput_str = get_output_char(outpu_tensor.numpy()[1:])
-    return ouput_str
+    if is_beam_search == False:
+        output_logits, _ = model(input_tensor, input_length, None, 0)
+        outpu_tensor = torch.argmax(output_logits.squeeze(1), 1)
+        ouput_str = get_output_char(outpu_tensor.numpy()[1:])
+        return ouput_str
+    else:
+        target = beam_search.beam_decode(input_tensor, input_length,model, beam_with=7)
+        print(target)
+        print(len(target[0][0]))
+        ouput_str = get_output_char(target[0][0][1:])
+        return ouput_str
+
+
 
 
 if __name__ == '__main__':
@@ -83,8 +93,8 @@ if __name__ == '__main__':
 
     seq2seq_model.load_state_dict(torch.load('./seq2seq_30_model.pt', map_location='cpu'))
     seq2seq_model.eval()
-    # text = '心不明点灯何用'
-    # print(predict_xl(text, seq2seq_model, device))
+    # text = '清风有意难留我'
+    # print(predict_xl(text, seq2seq_model, device, is_beam_search=True))
     df = pd.read_excel('./couplet/result-test.xlsx')
-    df['seq2seq_下联_1113-2'] = df['上联'].apply(lambda x: predict_xl(x, seq2seq_model, device))
+    df['seq2seq_下联_beam'] = df['上联'].apply(lambda x: predict_xl(x, seq2seq_model, device, is_beam_search=True))
     df.to_excel('./couplet/result-test.xlsx',index=False)

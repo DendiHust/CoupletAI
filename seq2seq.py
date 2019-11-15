@@ -36,7 +36,7 @@ class EncoderLayer(nn.Module):
     def forward(self, src_input, src_input_length):
         '''
         :param src_input: shape [seq_max_length, batch_size]
-        :param src_input_length shape [src_input_length, batch_size]
+        :param src_input_length shape [batch_size]
         :return:
         '''
         # embedded shape [seq_max_length, batch_size, embedd_dim]
