@@ -6,7 +6,7 @@
 # @File    : train_seq2seq.py
 # @Software: PyCharm
 
-import dataset_pro
+import dataset
 import argparse
 from seq2seq import EncoderLayer, DecoderLayer, AttentionLayer, Seq2Seq
 import torch
@@ -15,29 +15,30 @@ import torch.nn as nn
 import time
 import math
 from tqdm import tqdm
+import logger
 
 
 def get_args():
     args = argparse.ArgumentParser()
-    args.add_argument("--epoches", default=20, type=int)
+    args.add_argument("--epoches", default=100, type=int)
     args.add_argument("--lr", default=0.001, type=float)
     args.add_argument("--max_len", default=32, type=int)
-    args.add_argument("--sl_vocab_size", default=len(dataset_pro.SHANG_LIAN.vocab.stoi), type=int)
-    args.add_argument("--xl_vocab_size", default=len(dataset_pro.XIA_LIAN.vocab.stoi), type=int)
+    args.add_argument("--sl_vocab_size", default=len(dataset.SHANG_LIAN.vocab.stoi), type=int)
+    args.add_argument("--xl_vocab_size", default=len(dataset.XIA_LIAN.vocab.stoi), type=int)
     args.add_argument("--embedding_dim", default=150, type=int)
     args.add_argument("--enc_hidden_dim", default=256, type=int)
     args.add_argument("--dec_hidden_dim", default=256, type=int)
     args.add_argument("--dropout", default=0.1, type=float)
     args.add_argument("--teacher_forcing_ratio", default=0.3, type=float)
     args.add_argument("--gradient_clip", default=5.0, type=float)
-    args.add_argument("--no_cuda", default=True, action='store_true')
+    args.add_argument("--no_cuda", default=False, action='store_true')
     return args.parse_args()
 
 
 def train(model: Seq2Seq, optimizer, criterion, clip, teacher_radio, device):
     model.train()
     epoches_loss = 0
-    for index, batch in tqdm(enumerate(dataset_pro.train_iter)):
+    for index, batch in tqdm(enumerate(dataset.train_iter)):
         shang_lian, shang_lian_length = batch.shang_lian
         shang_lian = shang_lian.to(device)
         shang_lian_length = shang_lian_length.to(device)
@@ -50,12 +51,13 @@ def train(model: Seq2Seq, optimizer, criterion, clip, teacher_radio, device):
         xia_lian = xia_lian[1:].view(-1)
         loss = criterion(outputs, xia_lian)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+        # 梯度剪切
+        # torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
         # print(loss.item())
         optimizer.step()
 
         epoches_loss += loss.item()
-    result_loss = epoches_loss / len(dataset_pro.train_iter)
+    result_loss = epoches_loss / len(dataset.train_iter)
 
     return result_loss
 
@@ -64,7 +66,7 @@ def evaluate(model: Seq2Seq, criterion, device):
     model.eval()
     epoches_loss = 0
     with torch.no_grad():
-        for index, batch in enumerate(dataset_pro.valid_iter):
+        for index, batch in enumerate(dataset.valid_iter):
             shang_lian, shang_lian_length = batch.shang_lian
             shang_lian = shang_lian.to(device)
             shang_lian_length = shang_lian_length.to(device)
@@ -76,7 +78,7 @@ def evaluate(model: Seq2Seq, criterion, device):
 
             loss = criterion(output, xia_lian)
             epoches_loss += loss.item()
-    return epoches_loss / len(dataset_pro.valid_iter)
+    return epoches_loss / len(dataset.valid_iter)
 
 
 def epoch_time(start_time, end_time):
@@ -89,9 +91,9 @@ def epoch_time(start_time, end_time):
 if __name__ == '__main__':
     args = get_args()
     # pad index
-    PAD_IDX = dataset_pro.SHANG_LIAN.vocab.stoi['<pad>']
-    SOS_IDX = dataset_pro.XIA_LIAN.vocab.stoi['<sos>']
-    EOS_IDX = dataset_pro.XIA_LIAN.vocab.stoi['<eos>']
+    PAD_IDX = dataset.SHANG_LIAN.vocab.stoi['<pad>']
+    SOS_IDX = dataset.XIA_LIAN.vocab.stoi['<sos>']
+    EOS_IDX = dataset.XIA_LIAN.vocab.stoi['<eos>']
 
     device = torch.device('cuda' if args.no_cuda == False else 'cpu')
     encoder_layer = EncoderLayer(args.sl_vocab_size, args.embedding_dim, args.enc_hidden_dim, args.dec_hidden_dim,
@@ -123,10 +125,10 @@ if __name__ == '__main__':
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-        if valid_loss < best_valid_loss:
-            best_valid_loss = valid_loss
-            torch.save(seq2seq_model.state_dict(), 'tut3-model.pt')
+        if train_loss < best_valid_loss:
+            best_valid_loss = train_loss
+            torch.save(seq2seq_model.state_dict(), './models/seq2seq/seq2seq_{}_model.pt'.format(epoch + 1))
 
-        print('Epoch: {:02} | Time: {}m {}s'.format(epoch + 1, epoch_mins, epoch_secs))
-        print('\tTrain Loss: {:.3f} | Train PPL: {:7.3f}'.format(train_loss, math.exp(train_loss)))
-        print('\t Val. Loss: {:.3f} |  Val. PPL: {:7.3f}'.format(valid_loss, math.exp(valid_loss)))
+        logger.info('Epoch: {:02} | Time: {}m {}s'.format(epoch + 1, epoch_mins, epoch_secs))
+        logger.info('\tTrain Loss: {:.3f} | Train PPL: {:7.3f}'.format(train_loss, math.exp(train_loss)))
+        logger.info('\t Val. Loss: {:.3f} |  Val. PPL: {:7.3f}'.format(valid_loss, math.exp(valid_loss)))

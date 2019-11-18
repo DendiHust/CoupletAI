@@ -48,6 +48,12 @@ class PositionwiseFeedForward(nn.Module):
     '''
 
     def __init__(self, d_in, d_hid, dropout=0.1):
+        '''
+
+        :param d_in:        shape [batch_size, len_q, d_model]
+        :param d_hid:
+        :param dropout:
+        '''
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Conv1d(d_in, d_hid, 1)
         self.w_2 = nn.Conv1d(d_hid, d_in, 1)
@@ -61,7 +67,7 @@ class PositionwiseFeedForward(nn.Module):
         output = output.transpose(1, 2)
         output = self.dropout(output)
         output = self.layer_norm(output + residual)
-
+        # output shape [batch_size, len_q, d_model]
         return output
 
 
@@ -140,7 +146,8 @@ class MultiHeadAttention(nn.Module):
 
         output = self.dropout(self.fc(output))
         output = self.layer_norm(output + residual)
-
+        # output shape [batch_size, len_q, n_head * d_v]
+        # attn shape [n_head * batch_size, len_q, d_v]
         return output, attn
 
 

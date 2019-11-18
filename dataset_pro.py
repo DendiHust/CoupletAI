@@ -12,8 +12,8 @@ from torchtext.data import BucketIterator
 from tqdm import tqdm
 import json
 
-shanglian_dir = './couplet/train/in-bak.txt'
-xialian_dir = './couplet/train/out-bak.txt'
+shanglian_dir = './couplet/train/in.txt'
+xialian_dir = './couplet/train/out.txt'
 sl_stoi_dir = './stoi/sl_char_2_id.txt'
 xl_stoi_dir = './stoi/xl_char_2_id.txt'
 max_length = 32
@@ -34,7 +34,7 @@ def tokenize_func(text):
 
 
 SHANG_LIAN = Field(tokenize=tokenize_func, init_token='<sos>', eos_token='<eos>',  include_lengths=True)
-XIA_LIAN = Field(tokenize=tokenize_func, init_token='<sos>', eos_token='<eos>')
+XIA_LIAN = Field(tokenize=tokenize_func, init_token='<sos>', eos_token='<eos>', include_lengths=True)
 
 
 def get_dataset():

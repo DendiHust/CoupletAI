@@ -3,7 +3,7 @@
 # @Time    : 2019/11/13 15:48
 # @Author  : 云帆
 # @Site    : 
-# @File    : DuiLian.py
+# @File    : DuiLian_seq.py
 # @Software: PyCharm
 from seq2seq import EncoderLayer, DecoderLayer, AttentionLayer, Seq2Seq
 import json
@@ -93,8 +93,8 @@ if __name__ == '__main__':
 
     seq2seq_model.load_state_dict(torch.load('./seq2seq_30_model.pt', map_location='cpu'))
     seq2seq_model.eval()
-    # text = '清风有意难留我'
-    # print(predict_xl(text, seq2seq_model, device, is_beam_search=True))
-    df = pd.read_excel('./couplet/result-test.xlsx')
-    df['seq2seq_下联_beam'] = df['上联'].apply(lambda x: predict_xl(x, seq2seq_model, device, is_beam_search=True))
-    df.to_excel('./couplet/result-test.xlsx',index=False)
+    text = '伤心桥下春波绿'
+    print(predict_xl(text, seq2seq_model, device, is_beam_search=True))
+    # df = pd.read_excel('./couplet/result-test.xlsx')
+    # df['seq2seq_下联_beam'] = df['上联'].apply(lambda x: predict_xl(x, seq2seq_model, device, is_beam_search=True))
+    # df.to_excel('./couplet/result-test.xlsx',index=False)

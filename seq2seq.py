@@ -19,14 +19,6 @@ class EncoderLayer(nn.Module):
                  enc_hidden_dim,
                  dec_hidden_dim,
                  dropout):
-        '''
-        编码器
-        :param vocab_size:  编码器 词汇表大小
-        :param embedd_dim:  词向量维度
-        :param enc_hidden_dim:  编码器隐层维度
-        :param dec_hidden_dim:  解码器隐层维度
-        :param dropout:
-        '''
         super(EncoderLayer, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedd_dim)
         self.rnn = nn.GRU(embedd_dim, enc_hidden_dim, bidirectional=True)
@@ -36,7 +28,7 @@ class EncoderLayer(nn.Module):
     def forward(self, src_input, src_input_length):
         '''
         :param src_input: shape [seq_max_length, batch_size]
-        :param src_input_length shape [batch_size]
+        :param src_input_length shape [src_input_length, batch_size]
         :return:
         '''
         # embedded shape [seq_max_length, batch_size, embedd_dim]
@@ -75,8 +67,7 @@ class AttentionLayer(nn.Module):
         '''
         解码器当前的输出 与 编码器所有时刻的输出 进行 attention
         :param dec_hidden: shape [batch_size, dec_hidden_dim]，编码器最后一个状态 或者 解码器前一个状态
-        :param encoder_outputs:  [seq_pad_length, batch_size, enc_hidden_dim * 2]，编码器所有时刻的输出
-        :param mask: [batch_size, seq_pad_length]
+        :param encoder_outputs:  [seq_length, batch_size, enc_hidden_dim * 2]，编码器所有时刻的输出
         :return:
         '''
         batch_size = encoder_outputs.shape[1]
@@ -98,7 +89,7 @@ class AttentionLayer(nn.Module):
         # attention shape [batch_size, seq_length]
         attention = torch.bmm(v, energy).squeeze(1)
 
-        attention = attention.masked_fill(mask == 0, -1e10)
+        attention = attention.masked_fill(mask==0, -1e10)
 
         return F.softmax(attention, dim=1)
 
@@ -112,15 +103,6 @@ class DecoderLayer(nn.Module):
                  dec_hidden_dim,
                  dropout,
                  attention):
-        '''
-
-        :param vocab_size:
-        :param embedding_dim:
-        :param enc_hidden_dim:
-        :param dec_hidden_dim:
-        :param dropout:
-        :param attention:
-        '''
         super(DecoderLayer, self).__init__()
 
         self.vocab_size = vocab_size
@@ -171,8 +153,7 @@ class DecoderLayer(nn.Module):
         weighted = weighted.squeeze(0)
         # output shape [batch_size, vocab_size]
         output = self.out(torch.cat((output, weighted, embedd), dim=1))
-        # output shape [batch_size, target_vocab_size]
-        # hidden.squeeze(0) shape
+
         return output, hidden.squeeze(0), a.squeeze(1)
 
 
@@ -196,6 +177,7 @@ class Seq2Seq(nn.Module):
         # mask shape [batch_size, seq_legnth]
         return mask
 
+
     def forward(self, src_input, src_input_length, trg_input, teacher_forcing_ratio=0.3):
         # src_input shape [src_input_length, batch_size]
         # trg_input shape [trg_input_length, batch_size]
@@ -203,7 +185,7 @@ class Seq2Seq(nn.Module):
         if trg_input is None:
             assert teacher_forcing_ratio == 0, "Must be zero during inference"
             inference = True
-            trg_input = torch.zeros((100, src_input.shape[1])).long().fill_(self.sos_index).to(src_input.device)
+            trg_input = torch.zeros((100, src_input.shape[1])).long().fill_(self.sos_idx).to(src_input.device)
         else:
             inference = False
 
@@ -214,7 +196,7 @@ class Seq2Seq(nn.Module):
 
         outputs = torch.zeros(max_length, batch_size, trg_vocab_size).to(self.device)
 
-        attentions = torch.zeros(max_length, batch_size, src_input.shape[0]).to(self.device)
+        attentions = torch.zeros(max_length, batch_size,src_input.shape[0]).to(self.device)
 
         encoder_outputs, hidden = self.encoder(src_input, src_input_length)
         # first input to decoder is <sos>
