@@ -119,7 +119,7 @@ if __name__ == '__main__':
                                     pf_dim=args.fp_inner_dim, n_layers=args.n_layers, n_heads=args.n_head,
                                     dropout=args.dropout, device=device, SOS_IDX=SOS_IDX, PAD_IDX=PAD_IDX).to(
         device)
-    transformer_model.load_state_dict(torch.load('./models-bak/transformer/1119/transformer-model_34.pt', map_location='cpu'))
+    transformer_model.load_state_dict(torch.load('./models-bak/transformer/1119/transformer-model_81.pt', map_location='cpu'))
     transformer_model.eval()
     # text = '履霜坚冰至'
     # print(predict_xl(text, transformer_model, device, is_beam_search=False))
