@@ -25,16 +25,16 @@ TGT_EOS_IDX = dataset_pro.XIA_LIAN.vocab.stoi['<eos>']
 
 def get_args():
     args = argparse.ArgumentParser()
-    args.add_argument("--epoches", default=20, type=int)
+    args.add_argument("--epoches", default=100, type=int)
     args.add_argument("--lr", default=0.001, type=float)
     args.add_argument("--max_len", default=32, type=int)
     args.add_argument("--sl_vocab_size", default=len(dataset_pro.SHANG_LIAN.vocab.stoi), type=int)
     args.add_argument("--xl_vocab_size", default=len(dataset_pro.XIA_LIAN.vocab.stoi), type=int)
     args.add_argument("--embedding_dim", default=256, type=int)
     args.add_argument("--model_dim", default=256, type=int)
-    args.add_argument("--fp_inner_dim", default=1024, type=int)
+    args.add_argument("--fp_inner_dim", default=512, type=int)
     args.add_argument("--dropout", default=0.1, type=float)
-    args.add_argument("--n_layers", default=3, type=float)
+    args.add_argument("--n_layers", default=2, type=float)
     args.add_argument("--n_head", default=4, type=float)
     args.add_argument("--d_k", default=64, type=float)
     args.add_argument("--d_v", default=64, type=float)
@@ -58,18 +58,18 @@ def train(model: Transformer, optimizer, criterion, clip, device):
         shang_lian, shang_lian_length = batch.shang_lian
         shang_lian = shang_lian.permute(1, 0).to(device)
         # shang_lian_length = shang_lian_length.permute(1, 0).to(device)
-        shang_lian_length = shang_lian_length.numpy()
-        shang_lian_pos = torch.LongTensor(get_pos_ids(shang_lian_length, shang_lian.shape[1])).to(device)
+        # shang_lian_length = shang_lian_length.numpy()
+        # shang_lian_pos = torch.LongTensor(get_pos_ids(shang_lian_length, shang_lian.shape[1])).to(device)
         xia_lian, xia_lian_length = batch.xia_lian
         xia_lian = xia_lian.permute(1, 0).to(device)
-        xia_lian_length = xia_lian_length.numpy()
-        xia_lian_pos = torch.LongTensor(get_pos_ids(xia_lian_length, xia_lian.shape[1])).to(device)
+        # xia_lian_length = xia_lian_length.numpy()
+        # xia_lian_pos = torch.LongTensor(get_pos_ids(xia_lian_length, xia_lian.shape[1])).to(device)
 
         optimizer.zero_grad()
 
-        outputs = model(shang_lian, shang_lian_pos, xia_lian, xia_lian_pos)
+        outputs = model(shang_lian, xia_lian[:,:-1])
         outputs = outputs.contiguous().view(-1, outputs.shape[-1])
-        xia_lian = xia_lian.contiguous().view(-1)
+        xia_lian = xia_lian[:,1:].contiguous().view(-1)
         loss = criterion(outputs, xia_lian)
         loss.backward()
         # torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -91,16 +91,16 @@ def evaluate(model: Transformer, criterion, device):
             shang_lian, shang_lian_length = batch.shang_lian
             shang_lian = shang_lian.permute(1, 0).to(device)
             # shang_lian_length = shang_lian_length.permute(1, 0).to(device)
-            shang_lian_length = shang_lian_length.numpy()
-            shang_lian_pos = torch.LongTensor(get_pos_ids(shang_lian_length, shang_lian.shape[1])).to(device)
+            # shang_lian_length = shang_lian_length.numpy()
+            # shang_lian_pos = torch.LongTensor(get_pos_ids(shang_lian_length, shang_lian.shape[1])).to(device)
             xia_lian, xia_lian_length = batch.xia_lian
             xia_lian = xia_lian.permute(1, 0).to(device)
-            xia_lian_length = xia_lian_length.numpy()
-            xia_lian_pos = torch.LongTensor(get_pos_ids(xia_lian_length, xia_lian.shape[1])).to(device)
+            # xia_lian_length = xia_lian_length.numpy()
+            # xia_lian_pos = torch.LongTensor(get_pos_ids(xia_lian_length, xia_lian.shape[1])).to(device)
 
-            outputs = model(shang_lian, shang_lian_pos, xia_lian, xia_lian_pos)
+            outputs = model(shang_lian, xia_lian[:, :-1])
             outputs = outputs.contiguous().view(-1, outputs.shape[-1])
-            xia_lian = xia_lian.contiguous().view(-1)
+            xia_lian = xia_lian[:, 1:].contiguous().view(-1)
             loss = criterion(outputs, xia_lian)
             epoches_loss += loss.item()
     return epoches_loss / len(dataset_pro.valid_iter)
@@ -118,10 +118,9 @@ if __name__ == '__main__':
 
 
     device = torch.device('cuda' if args.no_cuda == False else 'cpu')
-    transformer_model = Transformer(args.sl_vocab_size, args.xl_vocab_size,embedding_dim=args.embedding_dim,
-                                    d_model=args.model_dim, d_inner=args.fp_inner_dim,
-                                    n_layers=args.n_layers, n_head=args.n_head,
-                                    d_k=args.d_k, d_v=args.d_v, dropout=args.dropout).to(device)
+    transformer_model = Transformer(args.sl_vocab_size, args.xl_vocab_size,hid_dim=args.embedding_dim,
+                                     pf_dim=args.fp_inner_dim, n_layers=args.n_layers, n_heads=args.n_head,
+                                    dropout=args.dropout, device=device,SOS_IDX=TGT_SOS_IDX, PAD_IDX=SRC_PAD_IDX).to(device)
 
     # 优化器
     optimizer = optim.Adam(transformer_model.parameters())
@@ -145,8 +144,8 @@ if __name__ == '__main__':
 
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-        if train_loss < best_valid_loss:
-            best_valid_loss = valid_loss
+        if train_loss <= best_valid_loss:
+            best_valid_loss = train_loss
             torch.save(transformer_model.state_dict(), './models/transformer/transformer-model_{}.pt'.format(epoch + 1))
 
         logger.info('Epoch: {:02} | Time: {}m {}s'.format(epoch + 1, epoch_mins, epoch_secs))

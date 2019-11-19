@@ -75,7 +75,7 @@ class SelfAttention(nn.Module):
         V = V.contiguous().view(batch_size, -1, self.n_heads, self.hid_dim // self.n_heads).permute(0, 2, 1, 3)
 
         # energy [batch_size, n_heads, seq_length, seq_length]
-        energy = torch.matmul(Q, K.view(0, 1, 3, 2)) / self.scale
+        energy = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale
 
         if mask is not None:
             energy = energy.masked_fill(mask == 0, -1e10)
@@ -86,7 +86,7 @@ class SelfAttention(nn.Module):
 
         x = x.contiguous().permute(0, 2, 1, 3)
         # x [batch_size, seq_length, hid_dim]
-        x = x.view(batch_size, -1, self.n_heads * (self.hid_dim // self.n_heads))
+        x = x.contiguous().view(batch_size, -1, self.n_heads * (self.hid_dim // self.n_heads))
 
         x = self.fc(x)
         # [batch_size, seq_length, hid_dim]

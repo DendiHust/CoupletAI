@@ -78,6 +78,7 @@ class Transformer(nn.Module):
     def __init__(self, src_vocab_size, trg_vocab_size,
                  hid_dim, n_heads, n_layers, pf_dim,
                  dropout, device, SOS_IDX, PAD_IDX):
+        super(Transformer, self).__init__()
         self.device = device
         self.encoder = Encoder(src_vocab_size, hid_dim, n_layers, n_heads, pf_dim, dropout, device)
         self.decoder = Decoder(trg_vocab_size, hid_dim, n_layers, n_heads, pf_dim, dropout, device)
