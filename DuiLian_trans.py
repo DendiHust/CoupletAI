@@ -11,7 +11,7 @@ import argparse
 # import dataset_pro
 import torch
 import pandas as pd
-import beam_search
+import beam_search_trans as beam_search
 from transformer.Models import Transformer
 import numpy as np
 
@@ -43,7 +43,7 @@ def get_args():
     args.add_argument("--fp_inner_dim", default=512, type=int)
     args.add_argument("--dropout", default=0.1, type=float)
     args.add_argument("--n_layers", default=2, type=float)
-    args.add_argument("--n_head", default=4, type=float)
+    args.add_argument("--n_head", default=8, type=float)
     args.add_argument("--d_k", default=64, type=float)
     args.add_argument("--d_v", default=64, type=float)
     args.add_argument("--gradient_clip", default=5.0, type=float)
@@ -103,7 +103,7 @@ def predict_xl(text, model: Transformer, device, is_beam_search=False):
         ouput_str = get_output_char(result)
         return ouput_str
     else:
-        target = beam_search.beam_decode(input_tensor, input_length, model, beam_with=7)
+        target = beam_search.beam_decode(input_tensor, model, beam_with=5)
         print(target)
         print(len(target[0][0]))
         ouput_str = get_output_char(target[0][0][1:])
@@ -117,12 +117,13 @@ if __name__ == '__main__':
     device = torch.device('cuda' if args.no_cuda == False else 'cpu')
     transformer_model = Transformer(args.sl_vocab_size, args.xl_vocab_size, hid_dim=args.embedding_dim,
                                     pf_dim=args.fp_inner_dim, n_layers=args.n_layers, n_heads=args.n_head,
-                                    dropout=args.dropout, device=device, SOS_IDX=SOS_IDX, PAD_IDX=PAD_IDX).to(
+                                    dropout=args.dropout, device=device, SOS_IDX=SOS_IDX, PAD_IDX=PAD_IDX, EOS_IDX=EOS_IDX).to(
         device)
-    transformer_model.load_state_dict(torch.load('./models-bak/transformer/1119/transformer-model_34.pt', map_location='cpu'))
+    transformer_model.load_state_dict(torch.load('./models-bak/transformer/1120/transformer-model_47.pt', map_location='cpu'))
     transformer_model.eval()
     # text = '履霜坚冰至'
     # print(predict_xl(text, transformer_model, device, is_beam_search=False))
     df = pd.read_excel('./couplet/result-test.xlsx')
     df['transformer'] = df['上联'].apply(lambda x: predict_xl(x, transformer_model, device, is_beam_search=False))
+    df['transformer_beam'] = df['上联'].apply(lambda x: predict_xl(x, transformer_model, device, is_beam_search=True))
     df.to_excel('./couplet/result-test.xlsx',index=False)

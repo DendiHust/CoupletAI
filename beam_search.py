@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from seq2seq import Seq2Seq
+from transformer.Models import Transformer
 
 
 class BeamSearchNode(object):
@@ -132,6 +133,7 @@ def beam_decode(src_input, src_input_length, model: Seq2Seq, beam_with=3, topk=1
             i+=1
         decode_result.append(utterances)
         return decode_result
+
 
 
 

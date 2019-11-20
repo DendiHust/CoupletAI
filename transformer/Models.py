@@ -77,13 +77,14 @@ class Decoder(nn.Module):
 class Transformer(nn.Module):
     def __init__(self, src_vocab_size, trg_vocab_size,
                  hid_dim, n_heads, n_layers, pf_dim,
-                 dropout, device, SOS_IDX, PAD_IDX):
+                 dropout, device, SOS_IDX, PAD_IDX, EOS_IDX):
         super(Transformer, self).__init__()
         self.device = device
         self.encoder = Encoder(src_vocab_size, hid_dim, n_layers, n_heads, pf_dim, dropout, device)
         self.decoder = Decoder(trg_vocab_size, hid_dim, n_layers, n_heads, pf_dim, dropout, device)
         self.sos_idx = SOS_IDX
         self.pad_idx = PAD_IDX
+        self.eos_idx = EOS_IDX
 
 
     def make_masks(self, src, trg):
