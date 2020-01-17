@@ -3,7 +3,7 @@
 # @Time    : 2019/11/12 17:09
 # @Author  : 云帆
 # @Site    : 
-# @File    : dataset.py
+# @File    : re_dataset.py
 # @Software: PyCharm
 
 import torchtext

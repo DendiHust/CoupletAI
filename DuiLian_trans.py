@@ -38,12 +38,11 @@ def get_args():
     args.add_argument("--max_len", default=32, type=int)
     args.add_argument("--sl_vocab_size", default=len(sl_stoi), type=int)
     args.add_argument("--xl_vocab_size", default=len(xl_itos), type=int)
-    args.add_argument("--embedding_dim", default=256, type=int)
+    args.add_argument("--embedding_dim", default=512, type=int)
     args.add_argument("--model_dim", default=256, type=int)
-    args.add_argument("--fp_inner_dim", default=512, type=int)
+    args.add_argument("--fp_inner_dim", default=1024, type=int)
     args.add_argument("--dropout", default=0.1, type=float)
     args.add_argument("--n_layers", default=2, type=float)
-    
     args.add_argument("--n_head", default=8, type=float)
     args.add_argument("--d_k", default=64, type=float)
     args.add_argument("--d_v", default=64, type=float)
@@ -121,12 +120,12 @@ if __name__ == '__main__':
                                     pf_dim=args.fp_inner_dim, n_layers=args.n_layers, n_heads=args.n_head,
 									dropout=args.dropout, device=device, SOS_IDX=SOS_IDX, PAD_IDX=PAD_IDX, EOS_IDX=EOS_IDX).to(
         device)
-    transformer_model.load_state_dict(torch.load('./models-bak/transformer/1120/transformer-model_92.pt', map_location='cpu'))
-    transformer_model.load_state_dict(torch.load('./models-bak/transformer/1120/transformer-model_92.pt', map_location='cpu'))
+    # transformer_model.load_state_dict(torch.load('./models-bak/transformer/1121/transformer-model_11.pt', map_location='cpu'))
+    transformer_model.load_state_dict(torch.load('./models-bak/transformer/1122/transformer-model_500.pt', map_location='cpu'))
     transformer_model.eval()
-    # text = '履霜坚冰至'
-    # print(predict_xl(text, transformer_model, device, is_beam_search=False))
-    df = pd.read_excel('./couplet/result-test.xlsx')
-    df['transformer'] = df['上联'].apply(lambda x: predict_xl(x, transformer_model, device, is_beam_search=False))
-    df['transformer_beam'] = df['上联'].apply(lambda x: predict_xl(x, transformer_model, device, is_beam_search=True))
-    df.to_excel('./couplet/result-test.xlsx',index=False)
+    text = '欲出烦恼须无我'
+    print(predict_xl(text, transformer_model, device, is_beam_search=True))
+    # df = pd.read_excel('./couplet/result-test.xlsx')
+    # df['transformer'] = df['上联'].apply(lambda x: predict_xl(x, transformer_model, device, is_beam_search=False))
+    # df['transformer_beam'] = df['上联'].apply(lambda x: predict_xl(x, transformer_model, device, is_beam_search=True))
+    # df.to_excel('./couplet/result-test.xlsx',index=False)

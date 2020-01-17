@@ -25,17 +25,18 @@ TGT_EOS_IDX = dataset_pro.XIA_LIAN.vocab.stoi['<eos>']
 
 def get_args():
     args = argparse.ArgumentParser()
-    args.add_argument("--epoches", default=100, type=int)
+    args.add_argument("--epoches", default=500, type=int)
     args.add_argument("--lr", default=0.001, type=float)
+    args.add_argument("--l2_reg", default=0.00001, type=float)
     args.add_argument("--max_len", default=32, type=int)
     args.add_argument("--sl_vocab_size", default=len(dataset_pro.SHANG_LIAN.vocab.stoi), type=int)
     args.add_argument("--xl_vocab_size", default=len(dataset_pro.XIA_LIAN.vocab.stoi), type=int)
-    args.add_argument("--embedding_dim", default=256, type=int)
+    args.add_argument("--embedding_dim", default=512, type=int)
     args.add_argument("--model_dim", default=256, type=int)
-    args.add_argument("--fp_inner_dim", default=512, type=int)
+    args.add_argument("--fp_inner_dim", default=1024, type=int)
     args.add_argument("--dropout", default=0.1, type=float)
     args.add_argument("--n_layers", default=2, type=float)
-    args.add_argument("--n_head", default=4, type=float)
+    args.add_argument("--n_head", default=8, type=float)
     args.add_argument("--d_k", default=64, type=float)
     args.add_argument("--d_v", default=64, type=float)
     args.add_argument("--gradient_clip", default=5.0, type=float)
@@ -72,7 +73,7 @@ def train(model: Transformer, optimizer, criterion, clip, device):
         xia_lian = xia_lian[:,1:].contiguous().view(-1)
         loss = criterion(outputs, xia_lian)
         loss.backward()
-        # torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
         # print(loss.item())
         optimizer.step()
 
@@ -120,10 +121,10 @@ if __name__ == '__main__':
     device = torch.device('cuda' if args.no_cuda == False else 'cpu')
     transformer_model = Transformer(args.sl_vocab_size, args.xl_vocab_size,hid_dim=args.embedding_dim,
                                      pf_dim=args.fp_inner_dim, n_layers=args.n_layers, n_heads=args.n_head,
-                                    dropout=args.dropout, device=device,SOS_IDX=TGT_SOS_IDX, PAD_IDX=SRC_PAD_IDX).to(device)
+                                    dropout=args.dropout, device=device,SOS_IDX=TGT_SOS_IDX, PAD_IDX=SRC_PAD_IDX, EOS_IDX=TGT_EOS_IDX).to(device)
 
     # 优化器
-    optimizer = optim.Adam(transformer_model.parameters())
+    optimizer = optim.Adam(transformer_model.parameters(), lr=args.lr, weight_decay=args.l2_reg)
 
     # 损失函数
     criterion = nn.CrossEntropyLoss(ignore_index=SRC_PAD_IDX)
